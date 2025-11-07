@@ -1,20 +1,38 @@
 import User from "../models/userModel.js";
+import asyncHandler from "express-async-handler";
 
 // @desc Get all users
-export const getUsers = async (req, res) => {
+export const getUsers = asyncHandler(async (req, res) => {
   const users = await User.find();
   res.json(users);
-};
+});
 
-// @desc Create a new user
-export const createUser = async (req, res) => {
-  const { name, email } = req.body;
+// @desc Get user by ID
+export const getUserById = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id).select("-password");
 
-  const userExists = await User.findOne({ email });
-  if (userExists) {
-    return res.status(400).json({ message: "User already exists" });
+  if (user) {
+    res.json(user);
+  } else {
+    res.status(404);
+    throw new Error("User not found");
   }
+});
 
-  const user = await User.create({ name, email });
-  res.status(201).json(user);
-};
+// @desc Get user profile
+// @route GET /api/users/profile
+// @access Private
+export const getUserProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+    });
+  } else {
+    res.status(404);
+    throw new Error("User not found");
+  }
+});
